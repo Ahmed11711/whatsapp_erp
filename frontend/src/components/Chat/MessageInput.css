@@ -1,0 +1,48 @@
+.message-input {
+  display: flex;
+  padding: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  gap: 0.5rem;
+}
+
+.message-input input {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+}
+
+.message-input button {
+  border-radius: 999px;
+  border: none;
+  padding: 0.5rem 1rem;
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.message-input button:disabled {
+  background: #9ca3af;
+  cursor: default;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .message-input {
+    padding: 0.5rem;
+  }
+  
+  .message-input input {
+    font-size: 0.9rem;
+    padding: 0.45rem 0.75rem;
+  }
+  
+  .message-input button {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.9rem;
+  }
+}
+
