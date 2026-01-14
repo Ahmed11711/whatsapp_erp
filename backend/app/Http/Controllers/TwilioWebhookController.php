@@ -177,9 +177,32 @@ class TwilioWebhookController extends Controller
                 'delivered' => 'delivered',
                 'read' => 'read',
                 'failed' => 'sent', // Keep as sent for failed messages
+                'undelivered' => 'sent',
             ];
 
             $newStatus = $statusMap[$status] ?? $message->status;
+
+            if ($status === 'queued') {
+                Log::warning('Message status is queued - WhatsApp number may not be fully activated', [
+                    'message_id' => $message->id,
+                    'message_sid' => $messageSid,
+                    'twilio_status' => $status,
+                    'note' => 'Messages stuck in queue usually mean the WhatsApp Business API number is not fully approved/activated. Check Twilio Console > Messaging > Senders.',
+                ]);
+            }
+
+            if ($status === 'failed' || $status === 'undelivered') {
+                $errorCode = $request->input('ErrorCode', '');
+                $errorMessage = $request->input('ErrorMessage', '');
+                
+                Log::error('Message delivery failed', [
+                    'message_id' => $message->id,
+                    'message_sid' => $messageSid,
+                    'twilio_status' => $status,
+                    'error_code' => $errorCode,
+                    'error_message' => $errorMessage,
+                ]);
+            }
 
             // Only update if status changed
             if ($message->status !== $newStatus) {

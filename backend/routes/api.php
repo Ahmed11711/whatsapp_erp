@@ -37,4 +37,6 @@ Route::middleware(['auth.api'])->group(function () {
     Route::post('/conversations/{customer}/messages', [MessageController::class, 'store']); // send message
     Route::post('/messages/{message}/read', [MessageController::class, 'markRead']); // mark single message as read
     Route::post('/customers/{customer}/read', [MessageController::class, 'markConversationRead']); // mark conversation as read
+    
+    Route::get('/twilio/status', [MessageController::class, 'checkTwilioStatus']); // check WhatsApp number status
 });

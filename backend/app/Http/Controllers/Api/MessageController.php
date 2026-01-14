@@ -132,13 +132,23 @@ class MessageController extends Controller
 
         // Send message via Twilio
         $result = $this->twilioService->sendWhatsAppMessage(
-            $customer->phone = '+201094321637',
+            // $customer->phone = '+201094321637',
+            $customer->phone,
             $data['content']
         );
 
         // Update message with Twilio SID if successful
         if ($result['success'] && isset($result['message_sid'])) {
             $message->twilio_message_sid = $result['message_sid'];
+            
+            // If message is queued, update status to indicate warning
+            if (isset($result['is_queued']) && $result['is_queued']) {
+                Log::warning('Message sent but queued - WhatsApp number may not be fully activated', [
+                    'message_id' => $message->id,
+                    'message_sid' => $result['message_sid'],
+                ]);
+            }
+            
             $message->save();
         } else {
             // Log error but still return the message (it's stored in DB)
@@ -185,5 +195,29 @@ class MessageController extends Controller
             ->update(['status' => 'read']);
 
         return response()->json(['message' => 'Conversation marked as read']);
+    }
+
+    /**
+     * Check Twilio WhatsApp number status and activation
+     * 
+     * This endpoint helps diagnose issues with WhatsApp number activation
+     */
+    public function checkTwilioStatus(Request $request)
+    {
+        $user = $request->user();
+        
+        // Only allow agents/admins to check status
+        if ($user->role !== 'agent' && $user->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $numberStatus = $this->twilioService->checkWhatsAppNumberStatus();
+        $recentMessages = $this->twilioService->getRecentMessageStatuses(10);
+
+        return response()->json([
+            'number_status' => $numberStatus,
+            'recent_messages' => $recentMessages,
+            'is_configured' => $this->twilioService->isConfigured(),
+        ]);
     }
 }
