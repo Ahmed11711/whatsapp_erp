@@ -144,7 +144,7 @@ class MessageController extends Controller
         } else {
             // Log error but still return the message (it's stored in DB)
             // Frontend can handle the error if needed
-            Log::warning('Failed to send message via WhatsApp API', [
+            Log::warning('Failed to send gmessage via WhatsApp API', [
                 'message_id' => $message->id,
                 'error' => $result['error'] ?? 'Unknown error',
             ]);
