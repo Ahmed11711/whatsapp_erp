@@ -132,7 +132,8 @@ class MessageController extends Controller
 
         // Send message via WhatsApp API
         $result = $this->whatsappService->sendWhatsAppMessage(
-            $customer->phone,
+            // $customer->phone,
+            '+201124213420',
             $data['content']
         );
 
@@ -195,7 +196,7 @@ class MessageController extends Controller
     public function checkWhatsAppStatus(Request $request)
     {
         $user = $request->user();
-        
+
         // Only allow agents/admins to check status
         if ($user->role !== 'agent' && $user->role !== 'admin') {
             return response()->json(['error' => 'Unauthorized'], 403);
