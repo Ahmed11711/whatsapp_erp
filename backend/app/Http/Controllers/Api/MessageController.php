@@ -132,8 +132,8 @@ class MessageController extends Controller
 
         // Send message via WhatsApp API
         $result = $this->whatsappService->sendWhatsAppMessage(
-            // $customer->phone,
-            '+201124213420',
+            $customer->phone,
+            // '+201124213420',
             $data['content']
         );
 
