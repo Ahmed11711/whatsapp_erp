@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TwilioWebhookController;
+use App\Http\Controllers\WhatsAppWebhookController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -9,16 +9,16 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Twilio Webhook Routes
+| WhatsApp Business API Webhook Routes
 |--------------------------------------------------------------------------
 |
-| These routes handle incoming webhooks from Twilio for WhatsApp messages.
-| They are publicly accessible (no authentication) as Twilio calls them directly.
+| These routes handle incoming webhooks from Meta WhatsApp Business API.
+| They are publicly accessible (no authentication) as Meta calls them directly.
 |
 */
 
-// Handle incoming WhatsApp messages from customers
-Route::post('/webhook/twilio/incoming', [TwilioWebhookController::class, 'handleIncomingMessage']);
+// Webhook verification (required by Meta) - GET request
+Route::get('/webhook/whatsapp', [WhatsAppWebhookController::class, 'verify']);
 
-// Handle status callbacks from Twilio (delivered, read, failed, etc.)
-Route::post('/webhook/twilio/status', [TwilioWebhookController::class, 'handleStatusCallback']);
+// Handle incoming WhatsApp messages and status updates from Meta - POST request
+Route::post('/webhook/whatsapp', [WhatsAppWebhookController::class, 'handleIncomingMessage']);

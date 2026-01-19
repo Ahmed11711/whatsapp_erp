@@ -1,8 +1,8 @@
 ## WhatsApp-like Sales Communication Platform
 
-This repository contains a **Laravel** backend (`backend`) and a **React (Vite)** frontend (`frontend`) for a WhatsApp-style sales communication tool with **full Twilio WhatsApp integration**.
+This repository contains a **Laravel** backend (`backend`) and a **React (Vite)** frontend (`frontend`) for a WhatsApp-style sales communication tool with **full Meta WhatsApp Business API integration**.
 
-- **Backend**: Laravel API with Twilio WhatsApp integration for receiving and sending messages.
+- **Backend**: Laravel API with Meta WhatsApp Business API integration for receiving and sending messages.
 - **Frontend**: Responsive React SPA with login, conversation list, and chat interface.
 
 ### Running the backend
@@ -18,11 +18,13 @@ This repository contains a **Laravel** backend (`backend`) and a **React (Vite)*
 
    - Copy `.env.example` to `.env`.
    - Set your DB connection (for quick testing you can use `DB_CONNECTION=sqlite` and `DB_DATABASE=database/database.sqlite`).
-   - **Configure Twilio** (see `backend/TWILIO_SETUP.md` for details):
+   - **Configure WhatsApp Business API** (see `backend/WHATSAPP_SETUP.md` for details):
      ```env
-     TWILIO_ACCOUNT_SID=your_account_sid
-     TWILIO_AUTH_TOKEN=your_auth_token
-     TWILIO_WHATSAPP_NUMBER=your_whatsapp_number
+     WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+     WHATSAPP_ACCESS_TOKEN=your_access_token
+     WHATSAPP_BUSINESS_ACCOUNT_ID=your_business_account_id
+     WHATSAPP_APP_ID=your_app_id
+     WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_verify_token
      ```
 
    ```bash
@@ -84,19 +86,20 @@ This repository contains a **Laravel** backend (`backend`) and a **React (Vite)*
   - Tables:
     - `users`: `id`, `name`, `email`, `password`, `role`, `api_token`, timestamps.
     - `customers`: `id`, `name`, `phone`, `assigned_agent_id`, timestamps.
-    - `messages`: `id`, `customer_id`, `sender_id`, `receiver_id`, `content`, `direction`, `status`, `twilio_message_sid`, timestamps.
+    - `messages`: `id`, `customer_id`, `sender_id`, `receiver_id`, `content`, `direction`, `status`, `whatsapp_message_id`, timestamps.
   - Auth: simple API token-based auth via `/api/auth/login` and `ApiTokenMiddleware`.
-  - **Twilio Integration**:
-    - `TwilioService`: Handles sending WhatsApp messages via Twilio API.
-    - `TwilioWebhookController`: Receives incoming messages and status callbacks from Twilio.
-    - Webhook routes: `/webhook/twilio/incoming` and `/webhook/twilio/status` (public, no auth required).
+  - **WhatsApp Business API Integration**:
+    - `WhatsAppService`: Handles sending WhatsApp messages via Meta WhatsApp Business API.
+    - `WhatsAppWebhookController`: Receives incoming messages and status updates from Meta.
+    - Webhook routes: `/webhook/whatsapp` (GET for verification, POST for messages/status) (public, no auth required).
   - Messaging endpoints:
     - `GET /api/messages` – list messages for current agent.
     - `GET /api/conversations` – list conversations grouped by customer.
     - `GET /api/conversations/{customer}` – conversation with a specific customer.
-    - `POST /api/conversations/{customer}/messages` – send message (automatically sends via Twilio).
+    - `POST /api/conversations/{customer}/messages` – send message (automatically sends via WhatsApp API).
     - `POST /api/messages/{message}/read` – mark a message as read.
     - `POST /api/customers/{customer}/read` – mark all messages in a conversation as read.
+    - `GET /api/whatsapp/status` – check WhatsApp API status and configuration.
 
 - **Frontend (React + Vite)**
   - Uses functional components and hooks.
@@ -110,21 +113,21 @@ This repository contains a **Laravel** backend (`backend`) and a **React (Vite)*
   - API client:
     - `src/services/api.js` – wraps `fetch` and reads `VITE_API_URL` from env.
 
-## Twilio WhatsApp Integration
+## WhatsApp Business API Integration
 
-The platform is fully integrated with Twilio WhatsApp API:
+The platform is fully integrated with Meta WhatsApp Business API:
 
-- **Receiving Messages**: Customers send WhatsApp messages → Twilio webhook → stored in database → appears in agent inbox
-- **Sending Messages**: Agent sends message → stored in database → sent via Twilio → status updates via webhook
-- **Status Tracking**: Message status (sent, delivered, read) is tracked via Twilio status callbacks
+- **Receiving Messages**: Customers send WhatsApp messages → Meta webhook → stored in database → appears in agent inbox
+- **Sending Messages**: Agent sends message → stored in database → sent via WhatsApp Business API → status updates via webhook
+- **Status Tracking**: Message status (sent, delivered, read) is tracked via Meta webhook callbacks
 
-See `backend/TWILIO_SETUP.md` for detailed setup instructions.
+See `backend/WHATSAPP_SETUP.md` for detailed setup instructions.
 
 ## Features
 
-✅ Full Twilio WhatsApp integration  
+✅ Full Meta WhatsApp Business API integration  
 ✅ Receive messages from customers via webhook  
-✅ Send messages to customers via Twilio API  
+✅ Send messages to customers via WhatsApp Business API  
 ✅ Message status tracking (sent, delivered, read)  
 ✅ Automatic customer creation from incoming messages  
 ✅ Agent assignment (round-robin)  
@@ -132,5 +135,5 @@ See `backend/TWILIO_SETUP.md` for detailed setup instructions.
 ✅ Real-time conversation view  
 ✅ Unread message counts  
 
-This setup provides a production-ready WhatsApp-like sales communication platform with full Twilio integration.
+This setup provides a production-ready WhatsApp-like sales communication platform with full Meta WhatsApp Business API integration.
 

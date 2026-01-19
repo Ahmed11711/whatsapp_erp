@@ -5,17 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Message;
-use App\Services\TwilioService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
     /**
-     * Initialize controller with Twilio service.
+     * Initialize controller with WhatsApp service.
      */
     public function __construct(
-        private TwilioService $twilioService
+        private WhatsAppService $whatsappService
     ) {}
 
     /**
@@ -109,7 +109,7 @@ class MessageController extends Controller
     /**
      * Send a message in a conversation.
      *
-     * Creates a message record and sends it via Twilio WhatsApp API
+     * Creates a message record and sends it via WhatsApp Business API
      * to the customer's phone number.
      */
     public function store(Request $request, Customer $customer)
@@ -130,30 +130,20 @@ class MessageController extends Controller
             'status' => 'sent',
         ]);
 
-        // Send message via Twilio
-        $result = $this->twilioService->sendWhatsAppMessage(
-            // $customer->phone = '+201094321637',
+        // Send message via WhatsApp API
+        $result = $this->whatsappService->sendWhatsAppMessage(
             $customer->phone,
             $data['content']
         );
 
-        // Update message with Twilio SID if successful
-        if ($result['success'] && isset($result['message_sid'])) {
-            $message->twilio_message_sid = $result['message_sid'];
-            
-            // If message is queued, update status to indicate warning
-            if (isset($result['is_queued']) && $result['is_queued']) {
-                Log::warning('Message sent but queued - WhatsApp number may not be fully activated', [
-                    'message_id' => $message->id,
-                    'message_sid' => $result['message_sid'],
-                ]);
-            }
-            
+        // Update message with WhatsApp message ID if successful
+        if ($result['success'] && isset($result['message_id'])) {
+            $message->whatsapp_message_id = $result['message_id'];
             $message->save();
         } else {
             // Log error but still return the message (it's stored in DB)
             // Frontend can handle the error if needed
-            Log::warning('Failed to send message via Twilio', [
+            Log::warning('Failed to send message via WhatsApp API', [
                 'message_id' => $message->id,
                 'error' => $result['error'] ?? 'Unknown error',
             ]);
@@ -198,11 +188,11 @@ class MessageController extends Controller
     }
 
     /**
-     * Check Twilio WhatsApp number status and activation
+     * Check WhatsApp Business API status and configuration
      * 
-     * This endpoint helps diagnose issues with WhatsApp number activation
+     * This endpoint helps diagnose issues with WhatsApp API configuration
      */
-    public function checkTwilioStatus(Request $request)
+    public function checkWhatsAppStatus(Request $request)
     {
         $user = $request->user();
         
@@ -211,13 +201,11 @@ class MessageController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $numberStatus = $this->twilioService->checkWhatsAppNumberStatus();
-        $recentMessages = $this->twilioService->getRecentMessageStatuses(10);
+        $status = $this->whatsappService->checkWhatsAppStatus();
 
         return response()->json([
-            'number_status' => $numberStatus,
-            'recent_messages' => $recentMessages,
-            'is_configured' => $this->twilioService->isConfigured(),
+            'status' => $status,
+            'is_configured' => $this->whatsappService->isConfigured(),
         ]);
     }
 }

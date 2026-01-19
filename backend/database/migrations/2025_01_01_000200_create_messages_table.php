@@ -23,8 +23,8 @@ return new class extends Migration
             $table->string('direction')->default('outbound');
             // status: 'sent', 'delivered', 'read', 'received' (for inbound)
             $table->string('status')->default('sent');
-            // Twilio message SID for tracking
-            $table->string('twilio_message_sid')->nullable();
+            // WhatsApp message ID for tracking
+            $table->string('whatsapp_message_id')->nullable();
             $table->timestamps();
         });
     }

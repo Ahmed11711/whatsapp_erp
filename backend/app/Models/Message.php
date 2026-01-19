@@ -16,7 +16,7 @@ class Message extends Model
         'content',
         'direction',
         'status',
-        'twilio_message_sid',
+        'whatsapp_message_id',
     ];
 
     /**
