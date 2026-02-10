@@ -19,10 +19,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('/twilio/status', function (Request $request) {
-    Log::info('Twilio callback (for testing)', $request->all());
-    return response()->json(['status' => 'ok']);
-})->name('twilio.status');
+
+Route::get('/meta/webhook', [\App\Http\Controllers\MetaWebhookController::class, 'verify']);
+Route::post('/meta/webhook', [\App\Http\Controllers\MetaWebhookController::class, 'handle']);
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
@@ -38,5 +37,5 @@ Route::middleware(['auth.api'])->group(function () {
     Route::post('/messages/{message}/read', [MessageController::class, 'markRead']); // mark single message as read
     Route::post('/customers/{customer}/read', [MessageController::class, 'markConversationRead']); // mark conversation as read
     
-    Route::get('/twilio/status', [MessageController::class, 'checkTwilioStatus']); // check WhatsApp number status
+    Route::get('/meta/status', [MessageController::class, 'checkStatus']); // check WhatsApp status
 });

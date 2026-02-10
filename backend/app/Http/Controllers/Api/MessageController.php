@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Log;
 class MessageController extends Controller
 {
     /**
-     * Initialize controller with Twilio service.
+     * Initialize controller with Meta service.
      */
     public function __construct(
-        private TwilioService $twilioService
+        private \App\Services\MetaWhatsAppService $metaService
     ) {}
 
     /**
@@ -109,51 +109,37 @@ class MessageController extends Controller
     /**
      * Send a message in a conversation.
      *
-     * Creates a message record and sends it via Twilio WhatsApp API
-     * to the customer's phone number.
+     * Creates a message record and sends it via Meta WhatsApp API
      */
     public function store(Request $request, Customer $customer)
     {
         $user = $request->user();
 
         $data = $request->validate([
-            'content' => ['required', 'string', 'max:1600'], // WhatsApp limit
+            'content' => ['required', 'string', 'max:1600'],
         ]);
 
         // Create message record
         $message = Message::create([
             'customer_id' => $customer->id,
             'sender_id' => $user->id,
-            'receiver_id' => null, // customer side (not a user in system)
+            'receiver_id' => null, // customer side
             'content' => $data['content'],
-            // 'direction' => 'outbound',
             'status' => 'sent',
         ]);
 
-        // Send message via Twilio
-        $result = $this->twilioService->sendWhatsAppMessage(
-            // $customer->phone = '+201094321637',
+        // Send message via Meta
+        $result = $this->metaService->sendMessage(
             $customer->phone,
             $data['content']
         );
 
-        // Update message with Twilio SID if successful
+        // Update message with Meta ID if successful
         if ($result['success'] && isset($result['message_sid'])) {
             $message->twilio_message_sid = $result['message_sid'];
-            
-            // If message is queued, update status to indicate warning
-            if (isset($result['is_queued']) && $result['is_queued']) {
-                Log::warning('Message sent but queued - WhatsApp number may not be fully activated', [
-                    'message_id' => $message->id,
-                    'message_sid' => $result['message_sid'],
-                ]);
-            }
-            
             $message->save();
         } else {
-            // Log error but still return the message (it's stored in DB)
-            // Frontend can handle the error if needed
-            Log::warning('Failed to send message via Twilio', [
+            Log::warning('Failed to send message via Meta', [
                 'message_id' => $message->id,
                 'error' => $result['error'] ?? 'Unknown error',
             ]);
@@ -198,26 +184,19 @@ class MessageController extends Controller
     }
 
     /**
-     * Check Twilio WhatsApp number status and activation
-     * 
-     * This endpoint helps diagnose issues with WhatsApp number activation
+     * Check Meta WhatsApp configuration status
      */
-    public function checkTwilioStatus(Request $request)
+    public function checkStatus(Request $request)
     {
         $user = $request->user();
         
-        // Only allow agents/admins to check status
         if ($user->role !== 'agent' && $user->role !== 'admin') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $numberStatus = $this->twilioService->checkWhatsAppNumberStatus();
-        $recentMessages = $this->twilioService->getRecentMessageStatuses(10);
-
         return response()->json([
-            'number_status' => $numberStatus,
-            'recent_messages' => $recentMessages,
-            'is_configured' => $this->twilioService->isConfigured(),
+            'is_configured' => $this->metaService->isConfigured(),
         ]);
     }
 }
+
