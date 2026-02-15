@@ -19,8 +19,25 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/meta-test', function () {
+    return app(\App\Services\MetaWhatsAppService::class)
+        ->sendMessage('201068704455', 'Test from server');
+});
 
-Route::get('/meta/webhook', [\App\Http\Controllers\MetaWebhookController::class, 'verify']);
+Route::get('/test', function () {
+    return response()->json(['status' => 'ok']);
+});
+
+
+Route::get('/meta/webhook', function () {
+    $verify_token = 'K9xT2pLm8QwZ4rNs7VbY1cHd6EfG3uJk';
+    if (request()->get('hub_verify_token') === $verify_token) {
+        return response(request()->get('hub_challenge'), 200);
+    }
+    return response('Error, wrong token', 403);
+});
+
+// Route::get('/meta/webhook', [\App\Http\Controllers\MetaWebhookController::class, 'verify']);
 Route::post('/meta/webhook', [\App\Http\Controllers\MetaWebhookController::class, 'handle']);
 
 Route::post('/auth/login', [AuthController::class, 'login']);

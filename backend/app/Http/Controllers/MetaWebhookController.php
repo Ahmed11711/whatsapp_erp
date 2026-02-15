@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class MetaWebhookController extends Controller
 {
@@ -15,60 +16,84 @@ class MetaWebhookController extends Controller
      */
     public function verify(Request $request)
     {
-        $mode = $request->query('hub_mode');
-        $token = $request->query('hub_verify_token');
-        $challenge = $request->query('hub_challenge');
+        Log::info('Meta Webhook VERIFY data', [
+            'query' => $request->query(),
+            'ip' => $request->ip(),
+            'headers' => $request->headers->all(),
+        ]);
 
-        $verifyToken = env('META_VERIFY_TOKEN');
-
-        if ($mode === 'subscribe' && $token === $verifyToken) {
-            Log::info('Meta Webhook Verified');
-            return response($challenge, 200);
-        }
-
-        Log::warning('Meta Webhook Verification Failed', $request->all());
-        return response('Forbidden', 403);
+        return response('success', 200);
     }
 
-    /**
-     * Handle Incoming Messages (POST)
-     */
-    public function handle(Request $request)
-    {
-        $body = $request->all();
-        // Log::info('Meta Webhook Received', $body);
+//   public function handle(Request $request)
+// {
+//     $data = $request->all();
 
-        try {
-            if (isset($body['object']) && $body['object'] === 'whatsapp_business_account') {
-                foreach ($body['entry'] as $entry) {
-                    foreach ($entry['changes'] as $change) {
-                        if ($change['field'] === 'messages') {
-                            $value = $change['value'];
+//     // Logs the entire JSON properly
+//     Log::info('Meta Webhook HANDLE data: ' . json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-                            // Handle Messages
-                            if (isset($value['messages'])) {
-                                foreach ($value['messages'] as $messageData) {
-                                    $this->processMessage($messageData, $value['contacts'] ?? []);
-                                }
-                            }
+//     return response('success', 200);
+// }
 
-                            // Handle Status Updates (sent, delivered, read)
-                            if (isset($value['statuses'])) {
-                                foreach ($value['statuses'] as $statusData) {
-                                    $this->processStatus($statusData);
-                                }
-                            }
-                        }
-                    }
+
+public function handle(Request $request)
+{
+    $data = $request->all();
+
+    foreach ($data['entry'] as $entry) {
+        foreach ($entry['changes'] as $change) {
+            $value = $change['value'];
+
+            if (isset($value['messages'])) {
+                foreach ($value['messages'] as $msg) {
+                    $from = $msg['from']; // الرقم اللي بعتلك الرسالة
+                    Log::info("Incoming WhatsApp message from {$from}");
+
+                    // رسالة ثابتة للتجربة
+                    $this->sendStaticReply($from);
                 }
-                return response('EVENT_RECEIVED', 200);
             }
-            return response('Create', 404);
-        } catch (\Exception $e) {
-            Log::error('Meta Webhook Error', ['error' => $e->getMessage()]);
-            return response('Internal Server Error', 500);
         }
     }
+
+    return response('success', 200);
+}
+
+private function sendStaticReply($to)
+{
+    $phone_number_id = '992330837294579'; // رقم البزنس الخاص بيك
+    $access_token = 'EAANBfjf5ke8BQj6wDWDwZCXyTCRJuZA2osiOWXm6z7tX1J96Jrc1yVZCxZBJLVlZB8E7EFOqZCcsGQz0ckGGnPHwPQECog1KCgCMwwNyDZAKVrAgXJW7ly8vWDnMWGPrkMOTpZCLomok08VCB7mFbwTmdWPCPlWVgToATbiZBMm1ZB5CZA7vOWzMtcpGQDl9QfL';
+
+    $url = "https://graph.facebook.com/v17.0/{$phone_number_id}/messages";
+
+    $response = Http::withToken($access_token)
+        ->post($url, [
+            "messaging_product" => "whatsapp",
+            "to" => $to,
+            "type" => "text",
+            "text" => [
+                "body" => "Hello! This is a test message ✅"
+            ]
+        ]);
+
+    Log::info('Reply sent: ' . $response->body());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private function processMessage($messageData, $contacts)
     {

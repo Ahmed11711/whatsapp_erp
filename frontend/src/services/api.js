@@ -4,7 +4,8 @@
 
 // Base URL من env أو fallback
 const API_URL =
-  import.meta.env.VITE_API_URL || 'https://chat.mag-opt.com/backend';
+  import.meta.env.VITE_API_URL || 'https://chat.mag-opt.com';
+  
 
 // ===============================
 // Headers
